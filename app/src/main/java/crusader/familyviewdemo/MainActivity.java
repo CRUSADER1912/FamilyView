@@ -95,8 +95,36 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < noChildrenProfiles.size(); i++) {
             ProfileTable capturedProfile = noChildrenProfiles.get(i);
             capturedProfile.setWeightage(markingVal);
+            refProfileTable.insertIfNotExistInDb(dbHelper.getDb(),capturedProfile);
+        }
+        //Till here we have set weightage for all with no children
+        //Now we start assigning weightage to their parents
+
+        for (int i = 0; i < noChildrenProfiles.size(); i++) {
+            assignWeightageToParents(noChildrenProfiles.get(i));
         }
 
+    }
+
+    private void assignWeightageToParents(ProfileTable profileTable) {
+        ProfileTable refProfile = new ProfileTable();
+        //get list of parent..
+        ArrayList<ProfileTable> list = refProfile.getFilteredData(dbHelper.getDb(),new ColumnValuePair(ProfileTable.PROFILE_COLUMN_ID, String.valueOf(profileTable.getParentProfileId())));
+        for (int i = 0; i < list.size(); i++) {
+            ProfileTable capturedProfile = list.get(i);
+            ArrayList<ProfileTable> childrenProfiles = getChildrenProfiles(capturedProfile);
+            int childrenWeightSum = 0;
+            for (int j = 0; j < childrenProfiles.size(); j++) {
+                childrenWeightSum = childrenWeightSum + childrenProfiles.get(j).getWeightage();
+            }
+            capturedProfile.setWeightage(childrenWeightSum);
+            refProfile.insertIfNotExistInDb(dbHelper.getDb(),capturedProfile);
+            if(capturedProfile.getParentProfileId() != 0){
+                //It means we still not reached the peak of family tree at top
+                //Hence, continue assigning weights
+                assignWeightageToParents(capturedProfile);
+            }
+        }
     }
 
     private ArrayList<ProfileTable> getProfilesNoChildren(){
