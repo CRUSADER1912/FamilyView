@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
@@ -226,6 +227,58 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         return array_list;
     }
 
+    public ArrayList<ProfileTable> getFilteredOrderedData(SQLiteDatabase db, String orderBy, ColumnValuePair... pair) {
+        ArrayList<ProfileTable> array_list = new ArrayList<>();
+
+        String queryString = "select * from " + getTableName();
+
+        if (pair != null) {
+            StringBuilder filteredQuery = new StringBuilder();
+            if (pair.length > 0) {
+                filteredQuery.append(" WHERE ");
+            }
+            for (int i = 0; i < pair.length; i++) {
+                filteredQuery.append(pair[i].getColumnName()).append(" = ").append("'").append(pair[i].getColumnValue()).append("'");
+                if (i != pair.length - 1) {
+                    filteredQuery.append(" AND ");
+                }
+            }
+            if (filteredQuery.length() > 0) {
+                queryString = queryString + filteredQuery.toString();
+            }
+        }
+
+        if(!TextUtils.isEmpty(orderBy)){
+            queryString = queryString + " " +orderBy;
+        }
+
+        Cursor cursor = db.rawQuery(queryString, null);
+        try {
+            cursor.moveToFirst();
+
+            while (!cursor.isAfterLast()) {
+                ProfileTable userPROFILE = new ProfileTable();
+                userPROFILE.setProfileId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_ID))));
+                userPROFILE.setName(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_USERNAME)));
+                userPROFILE.setImgProfileUrl(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_URL)));
+                userPROFILE.setParentProfileId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_PARENT_ID))));
+                userPROFILE.setDescription(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_DESCRIPTION)));
+                String weightage = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_WEIGHTAGE));
+                userPROFILE.setWeightage(TextUtils.isEmpty(weightage) ? 0 : Integer.parseInt(weightage));
+                userPROFILE.setParent(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_IS_PARENT)).equalsIgnoreCase("1"));
+                String lvlTier = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_TIER_LVL));
+                userPROFILE.setLvlTier(TextUtils.isEmpty(lvlTier) ? 0 : Integer.parseInt(lvlTier));
+                array_list.add(userPROFILE);
+                cursor.moveToNext();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            cursor.close();
+        }
+        return array_list;
+    }
+
     @Override
     public int getRowCount(SQLiteDatabase db, ColumnValuePair... pair) {
         int numRows = 0;
@@ -281,6 +334,12 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         return db.delete(getTableName(),
                 PROFILE_COLUMN_USERNAME + " = ? ",
                 new String[] { tableModel.getName()});
+    }
+
+    @Override
+    public int getMaxColumnValue(SQLiteDatabase db, String columnName) {
+        final SQLiteStatement stmt = db.compileStatement("SELECT MAX("+columnName+") FROM " + getTableName());
+        return (int) stmt.simpleQueryForLong();
     }
 
 

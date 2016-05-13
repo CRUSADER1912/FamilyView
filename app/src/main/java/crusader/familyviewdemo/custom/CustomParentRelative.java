@@ -5,9 +5,11 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RelativeLayout;
 
@@ -96,11 +98,20 @@ public class CustomParentRelative extends RelativeLayout {
                 secondLayout = layoutRelationModels.get(i).getSecondLayout();
                 if(firstLayout != null && secondLayout != null){
                     if(layoutRelationModels.get(i).getRelationType() == LayoutRelationModel.RELATIONSHIP_TYPE_VERTICAL){
+                        Rect myFirstViewRect = new Rect();
+                        firstLayout.getGlobalVisibleRect(myFirstViewRect);
+
+                        Rect mySecondViewRect = new Rect();
+                        secondLayout.getGlobalVisibleRect(mySecondViewRect);
+
+
                         //Drawing line from top to bottom
-                        canvas.drawLine((firstLayout.getX() + (firstLayout.getWidth()/2)), (firstLayout.getY() + (firstLayout.getHeight())), (secondLayout.getX() + (secondLayout.getWidth()/2)), secondLayout.getY(), m_paint);
+//                        canvas.drawLine((firstLayout.getX() + (firstLayout.getWidth()/2)), (firstLayout.getY() + (firstLayout.getHeight())), (secondLayout.getX() + (secondLayout.getWidth()/2)), secondLayout.getY(), m_paint);
+//                        canvas.drawLine(myFirstViewRect.exactCenterX(), myFirstViewRect.bottom, mySecondViewRect.exactCenterX(), mySecondViewRect.top, m_paint);
+                        canvas.drawLine((getRelativeLeft(firstLayout) + (firstLayout.getWidth()/2)), (getRelativeTop(firstLayout) + (firstLayout.getHeight() / 2)), (getRelativeLeft(secondLayout) + (secondLayout.getWidth()/2)), (getRelativeTop(secondLayout) - (secondLayout.getHeight() / 2)), m_paint);
                     }else if (layoutRelationModels.get(i).getRelationType() == LayoutRelationModel.RELATIONSHIP_TYPE_HORIZONTAL){
                         //Drawing line from left to right
-                        canvas.drawLine((firstLayout.getX() + firstLayout.getWidth()), (firstLayout.getY() + (firstLayout.getHeight() / 2)), (secondLayout.getX()), (secondLayout.getY() + (secondLayout.getHeight() / 2)), m_paint);
+                        canvas.drawLine((firstLayout.getX() + firstLayout.getWidth()), (firstLayout.getY() + (firstLayout.getHeight() / 2) - 100), (secondLayout.getX()), (secondLayout.getY() + (secondLayout.getHeight() / 2) - 100), m_paint);
                     }
                 }
             }
@@ -109,5 +120,19 @@ public class CustomParentRelative extends RelativeLayout {
 ////            canvas.drawLine((firstLayout.getX() + firstLayout.getWidth() + 100), firstLayout.getY() + 50, secondLayout.getX() + 25, secondLayout.getY(), m_paint);
 //            canvas.drawLine((firstLayout.getX() + (firstLayout.getWidth()/2)), (firstLayout.getY() + (firstLayout.getHeight())), (secondLayout.getX() + (secondLayout.getWidth()/2)), secondLayout.getY(), m_paint);
 //        }
+    }
+
+    private int getRelativeLeft(View myView) {
+        if (myView.getParent() == myView.getRootView())
+            return myView.getLeft();
+        else
+            return myView.getLeft() + getRelativeLeft((View) myView.getParent());
+    }
+
+    private int getRelativeTop(View myView) {
+        if (myView.getParent() == myView.getRootView())
+            return myView.getTop();
+        else
+            return myView.getTop() + getRelativeTop((View) myView.getParent());
     }
 }

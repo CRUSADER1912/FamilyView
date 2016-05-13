@@ -33,4 +33,6 @@ public abstract class BaseTable<T> {
     public abstract boolean insertIfNotExistInDb(SQLiteDatabase db, T tableModel);
 
     public abstract Integer deleteData(SQLiteDatabase db, T tableModel);
+
+    public abstract int getMaxColumnValue(SQLiteDatabase db, String ColumnName);
 }
