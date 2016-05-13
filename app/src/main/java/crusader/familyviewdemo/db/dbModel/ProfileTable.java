@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.text.TextUtils;
 
 import java.util.ArrayList;
 
@@ -20,7 +21,9 @@ public class ProfileTable extends BaseTable<ProfileTable> {
     public static final String PROFILE_COLUMN_PROFILE_URL = "profileUrl";
     public static final String PROFILE_COLUMN_PROFILE_PARENT_ID = "parentId";
     public static final String PROFILE_COLUMN_PROFILE_DESCRIPTION = "description";
-    public static final String PROFILE_COLUMN_PROFILE_HAS_BRO_SIS = "bro_sis";
+    public static final String PROFILE_COLUMN_PROFILE_IS_PARENT = "isParent";
+    public static final String PROFILE_COLUMN_PROFILE_WEIGHTAGE = "weightage";
+    public static final String PROFILE_COLUMN_PROFILE_TIER_LVL = "tierLvl";
 
     
     public ProfileTable() {
@@ -31,7 +34,8 @@ public class ProfileTable extends BaseTable<ProfileTable> {
     String imgProfileUrl;
     int parentProfileId;
     String description;
-    boolean hasBroSis;
+    int weightage;
+    boolean isParent;
     int lvlTier;
 
 
@@ -77,14 +81,13 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         this.parentProfileId = parentProfileId;
     }
 
-    public boolean isHasBroSis() {
-        return hasBroSis;
+    public int getWeightage() {
+        return weightage;
     }
 
-    public void setHasBroSis(boolean hasBroSis) {
-        this.hasBroSis = hasBroSis;
+    public void setWeightage(int weightage) {
+        this.weightage = weightage;
     }
-    
 
     public String getDescription() {
         return description;
@@ -102,11 +105,19 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         this.lvlTier = lvlTier;
     }
 
+    public boolean isParent() {
+        return isParent;
+    }
+
+    public void setParent(boolean parent) {
+        isParent = parent;
+    }
+
     @Override
     public void createTable(SQLiteDatabase db) {
         db.execSQL(
                 "CREATE TABLE IF NOT EXISTS " + PROFILE_TABLE_NAME +
-                        " (" + PROFILE_COLUMN_ID + " integer primary key, " + PROFILE_COLUMN_USERNAME  + " text, " + PROFILE_COLUMN_PROFILE_URL+ " text, " + PROFILE_COLUMN_PROFILE_PARENT_ID+ " text, " + PROFILE_COLUMN_PROFILE_DESCRIPTION + " text, " + PROFILE_COLUMN_PROFILE_HAS_BRO_SIS + " text)"
+                        " (" + PROFILE_COLUMN_ID + " integer primary key, " + PROFILE_COLUMN_USERNAME  + " text, " + PROFILE_COLUMN_PROFILE_URL+ " text, " + PROFILE_COLUMN_PROFILE_PARENT_ID+ " text, " + PROFILE_COLUMN_PROFILE_DESCRIPTION + " text, " + PROFILE_COLUMN_PROFILE_WEIGHTAGE + " text, " + PROFILE_COLUMN_PROFILE_IS_PARENT + " text, " + PROFILE_COLUMN_PROFILE_TIER_LVL + " text)"
         );
     }
 
@@ -117,7 +128,7 @@ public class ProfileTable extends BaseTable<ProfileTable> {
 
     @Override
     public String[] getColumnNames() {
-        return new String[]{PROFILE_COLUMN_ID, PROFILE_COLUMN_USERNAME, PROFILE_COLUMN_PROFILE_URL, PROFILE_COLUMN_PROFILE_PARENT_ID, PROFILE_COLUMN_PROFILE_DESCRIPTION, PROFILE_COLUMN_PROFILE_HAS_BRO_SIS};
+        return new String[]{PROFILE_COLUMN_ID, PROFILE_COLUMN_USERNAME, PROFILE_COLUMN_PROFILE_URL, PROFILE_COLUMN_PROFILE_PARENT_ID, PROFILE_COLUMN_PROFILE_DESCRIPTION, PROFILE_COLUMN_PROFILE_WEIGHTAGE, PROFILE_COLUMN_PROFILE_IS_PARENT, PROFILE_COLUMN_PROFILE_TIER_LVL};
     }
 
     @Override
@@ -128,7 +139,9 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         contentValues.put(PROFILE_COLUMN_PROFILE_URL, tableModel.getImgProfileUrl());
         contentValues.put(PROFILE_COLUMN_PROFILE_PARENT_ID, tableModel.getParentProfileId());
         contentValues.put(PROFILE_COLUMN_PROFILE_DESCRIPTION, tableModel.getDescription());
-        contentValues.put(PROFILE_COLUMN_PROFILE_HAS_BRO_SIS, tableModel.isHasBroSis() ? "1" : "0");
+        contentValues.put(PROFILE_COLUMN_PROFILE_WEIGHTAGE, tableModel.getWeightage());
+        contentValues.put(PROFILE_COLUMN_PROFILE_IS_PARENT, tableModel.isParent() ? "1" : "0");
+        contentValues.put(PROFILE_COLUMN_PROFILE_TIER_LVL, tableModel.getLvlTier());
         long count = db.insert(getTableName(), null, contentValues);
         return count > 0;
     }
@@ -148,7 +161,11 @@ public class ProfileTable extends BaseTable<ProfileTable> {
                 userPROFILE.setImgProfileUrl(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_URL)));
                 userPROFILE.setParentProfileId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_PARENT_ID))));
                 userPROFILE.setDescription(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_DESCRIPTION)));
-                userPROFILE.setHasBroSis(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_HAS_BRO_SIS)).equalsIgnoreCase("1"));
+                String weightage = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_WEIGHTAGE));
+                userPROFILE.setWeightage(TextUtils.isEmpty(weightage) ? 0 : Integer.parseInt(weightage));
+                userPROFILE.setParent(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_IS_PARENT)).equalsIgnoreCase("1"));
+                String lvlTier = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_TIER_LVL));
+                userPROFILE.setLvlTier(TextUtils.isEmpty(lvlTier) ? 0 : Integer.parseInt(lvlTier));
                 array_list.add(userPROFILE);
                 cursor.moveToNext();
             }
@@ -193,7 +210,11 @@ public class ProfileTable extends BaseTable<ProfileTable> {
                 userPROFILE.setImgProfileUrl(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_URL)));
                 userPROFILE.setParentProfileId(Integer.parseInt(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_PARENT_ID))));
                 userPROFILE.setDescription(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_DESCRIPTION)));
-                userPROFILE.setHasBroSis(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_HAS_BRO_SIS)).equalsIgnoreCase("1"));
+                String weightage = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_WEIGHTAGE));
+                userPROFILE.setWeightage(TextUtils.isEmpty(weightage) ? 0 : Integer.parseInt(weightage));
+                userPROFILE.setParent(cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_IS_PARENT)).equalsIgnoreCase("1"));
+                String lvlTier = cursor.getString(cursor.getColumnIndex(PROFILE_COLUMN_PROFILE_TIER_LVL));
+                userPROFILE.setLvlTier(TextUtils.isEmpty(lvlTier) ? 0 : Integer.parseInt(lvlTier));
                 array_list.add(userPROFILE);
                 cursor.moveToNext();
             }
@@ -235,7 +256,9 @@ public class ProfileTable extends BaseTable<ProfileTable> {
         contentValues.put(PROFILE_COLUMN_PROFILE_URL, tableModel.getImgProfileUrl());
         contentValues.put(PROFILE_COLUMN_PROFILE_PARENT_ID, tableModel.getParentProfileId());
         contentValues.put(PROFILE_COLUMN_PROFILE_DESCRIPTION, tableModel.getDescription());
-        contentValues.put(PROFILE_COLUMN_PROFILE_HAS_BRO_SIS, tableModel.isHasBroSis() ? "1" : "0");
+        contentValues.put(PROFILE_COLUMN_PROFILE_WEIGHTAGE, tableModel.getWeightage());
+        contentValues.put(PROFILE_COLUMN_PROFILE_IS_PARENT, tableModel.isParent() ? "1" : "0");
+        contentValues.put(PROFILE_COLUMN_PROFILE_TIER_LVL, tableModel.getLvlTier());
         db.update(getTableName(), contentValues, PROFILE_COLUMN_ID + " = ? ", new String[] { String.valueOf(tableModel.getProfileId()) } );
         return true;
     }

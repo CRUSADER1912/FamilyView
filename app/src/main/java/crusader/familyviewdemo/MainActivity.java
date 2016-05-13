@@ -2,8 +2,8 @@ package crusader.familyviewdemo;
 
 import android.graphics.Color;
 import android.os.Build;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -15,11 +15,8 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
-import crusader.familyviewdemo.custom.CanvasHelper;
 import crusader.familyviewdemo.custom.CustomParentRelative;
-import crusader.familyviewdemo.custom.LineView;
 import crusader.familyviewdemo.custom.TwoDScrollView;
 import crusader.familyviewdemo.db.ColumnValuePair;
 import crusader.familyviewdemo.db.DBHelper;
@@ -49,7 +46,8 @@ public class MainActivity extends AppCompatActivity {
         twoDScrollView.addView(relativeLayout);
 
         insertRawInDb();
-
+        calculateTierLvlHash(null);
+        calculateWeightage();
 
         ProfileModel profileModel1 = new ProfileModel(1 , "Linus" , "https://i.stack.imgur.com/IIAjr.jpg" , "ASHU" , 0 , "Stays in Vasai");
         ProfileModel profileModel2 = new ProfileModel(2 , "Teju" , "https://i.stack.imgur.com/IIAjr.jpg" , "ASHU" , 0 , "Stays in Mars :P");
@@ -75,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private void insertRawInDb() {
         ProfileTable profileTable = new ProfileTable();
         profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.Ashu);
-        profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.rohan);
+//        profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.rohan);
         profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.linus);
         profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.teju);
         profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.pranit);
@@ -86,15 +84,60 @@ public class MainActivity extends AppCompatActivity {
         profileTable.insertIfNotExistInDb(dbHelper.getDb(),AppConstants.sandeep);
     }
 
-    private void calculateTierLvl(ArrayList<ProfileModel> completeDataList, ProfileTable profileTable) {
+    private void calculateWeightage() {
+        int markingWeightageValue = 1 ;
+        insertWeightageDataDb(markingWeightageValue);
+    }
+
+    private void insertWeightageDataDb(int markingVal) {
+        ProfileTable refProfileTable = new ProfileTable();
+        ArrayList<ProfileTable> noChildrenProfiles = getProfilesNoChildren();
+        for (int i = 0; i < noChildrenProfiles.size(); i++) {
+            ProfileTable capturedProfile = noChildrenProfiles.get(i);
+            capturedProfile.setWeightage(markingVal);
+        }
+
+    }
+
+    private ArrayList<ProfileTable> getProfilesNoChildren(){
+        ProfileTable refProfile = new ProfileTable();
+        ArrayList<ProfileTable> filteredData ;
+        filteredData = refProfile.getFilteredData(dbHelper.getDb() , new ColumnValuePair(ProfileTable.PROFILE_COLUMN_PROFILE_IS_PARENT , String.valueOf(0)));
+        return filteredData;
+    }
+
+    private void calculateTierLvlHash(ProfileTable profileTable){
+        int markingTierValue = 0;
+        insertTierDataDb(profileTable,markingTierValue);
+    }
+
+    private void insertTierDataDb(ProfileTable profileTable, int markingVal){
+        ProfileTable refProfileTable = new ProfileTable();
+        ArrayList<ProfileTable> datas = getChildrenProfiles(profileTable);
+        for (int i = 0; i < datas.size(); i++) {
+            ProfileTable capturedProfile = datas.get(i);
+            capturedProfile.setLvlTier(markingVal);
+            if(refProfileTable.getRowCount(dbHelper.getDb(), new ColumnValuePair(ProfileTable.PROFILE_COLUMN_PROFILE_PARENT_ID, String.valueOf(capturedProfile.getProfileId()))) > 0){
+                //Captured Profile is a parent
+                capturedProfile.setParent(true);
+                insertTierDataDb(capturedProfile, (markingVal + 1));
+            }else{
+                //Captured profile is not a parent
+                capturedProfile.setParent(false);
+            }
+            refProfileTable.insertIfNotExistInDb(dbHelper.getDb(),capturedProfile);
+        }
+    }
+
+    private ArrayList<ProfileTable> getChildrenProfiles(ProfileTable profileTable) {
         ProfileTable refProfile = new ProfileTable();
         ArrayList<ProfileTable> filteredData ;
         if(profileTable == null){
-            filteredData = refProfile.getFilteredData(dbHelper.getDb() , new ColumnValuePair(ProfileTable.PROFILE_COLUMN_ID , String.valueOf(0)));
+            filteredData = refProfile.getFilteredData(dbHelper.getDb() , new ColumnValuePair(ProfileTable.PROFILE_COLUMN_PROFILE_PARENT_ID , String.valueOf(0)));
         }else{
-            filteredData = refProfile.getFilteredData(dbHelper.getDb() , new ColumnValuePair(ProfileTable.PROFILE_COLUMN_ID , String.valueOf(profileTable.getProfileId())));
+            filteredData = refProfile.getFilteredData(dbHelper.getDb() , new ColumnValuePair(ProfileTable.PROFILE_COLUMN_PROFILE_PARENT_ID , String.valueOf(profileTable.getProfileId())));
         }
-
+        return filteredData;
     }
 
     private LinearLayout addProfileContainer(ProfileModel profileModel, RelativeLayout parentRelativeLayout, ViewGroup relativeToLayout, int RELATIVE_TYPE) {
@@ -126,4 +169,6 @@ public class MainActivity extends AppCompatActivity {
 
         return ln_profileContainor;
     }
+
+
 }
